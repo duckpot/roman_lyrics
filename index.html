@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>DUCK POT</title>
+
+<!-- フォント -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&display=swap" rel="stylesheet">
+
+
+<style>
+
+/* 全体 */
+
+body{
+    margin:0;
+    background:#f3efe7;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    height:100vh;
+    overflow:hidden;
+
+    position:relative;
+}
+
+/* 画像 */
+
+img{
+    width: 70%;
+    max-width:900px;
+    max-height:100vh;
+
+    object-fit:contain;
+
+    touch-action:none;
+
+    user-select:none;
+    -webkit-user-drag:none;
+
+    transform:translateX(0);
+
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease;
+}
+
+/* 下部UI */
+
+#controls{
+    position:absolute;
+
+    bottom:20px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    display:flex;
+    align-items:center;
+    gap:20px;
+
+    background:rgba(255,255,255,0.7);
+
+    padding:8px 16px;
+    border-radius:999px;
+
+    font-family:sans-serif;
+    color:#555;
+}
+
+/* ボタン */
+
+.button{
+    cursor:pointer;
+    user-select:none;
+
+    font-size:18px;
+}
+
+/* ページ数 */
+
+#pageNumber{
+    font-size:16px;
+
+    font-family:"Cormorant Garamond", serif;
+
+    letter-spacing:1px;
+
+    font-variant-numeric:lining-nums;
+}
+
+/* ダークモード */
+
+@media (prefers-color-scheme: dark){
+
+    body{
+        background:#111;
+        color:#eee;
+    }
+
+    #controls{
+        background:rgba(30,30,30,0.7);
+        color:#ddd;
+    }
+}
+
+/* スマホ調整 */
+@media screen and (max-width:768px){
+
+    #controls{
+        bottom:165px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- 画像 -->
+
+<img id="page" src="images/01.PNG">
+
+<!-- UI -->
+
+<div id="controls">
+
+    <div class="button" id="prev"><</div>
+
+    <div id="pageNumber"></div>
+
+    <div class="button" id="next">></div>
+
+</div>
+
+<script>
+
+/* ページ一覧 */
+
+const pages = [
+    "images/01.webp",
+    "images/02.webp",
+    "images/03.webp",
+    "images/04.webp",
+    "images/05.webp",
+    "images/06.webp",
+    "images/07.webp",
+    "images/08.webp",
+    "images/09.webp",
+    "images/10.webp"
+    
+];
+
+/* 画像取得 */
+
+const img = document.getElementById("page");
+
+/* 現在ページ */
+
+let current = 0;
+
+/* ページ表示 */
+
+function showPage(direction = "next"){
+
+    /* スライド方向 */
+
+    if(direction === "next"){
+        img.style.transform = "translateX(-40px)";
+    }else{
+        img.style.transform = "translateX(40px)";
+    }
+
+    /* フェードアウト */
+
+    img.style.opacity = 0;
+
+    setTimeout(() => {
+
+        /* 画像変更 */
+
+        img.src = pages[current];
+
+        /* 初期位置 */
+
+        img.style.transition = "none";
+
+        img.style.transform =
+            direction === "next"
+            ? "translateX(40px)"
+            : "translateX(-40px)";
+
+        requestAnimationFrame(() => {
+
+            /* アニメーション復帰 */
+
+            img.style.transition =
+                "opacity 0.25s ease, transform 0.25s ease";
+
+            img.style.opacity = 1;
+
+            img.style.transform = "translateX(0)";
+        });
+
+        /* ページ数 */
+
+        document.getElementById("pageNumber").textContent =
+            `${current + 1} / ${pages.length}`;
+
+    }, 120);
+}
+
+/* 次へ */
+
+document.getElementById("next").addEventListener("click", () => {
+
+    current++;
+
+    if(current >= pages.length){
+        current = 0;
+    }
+
+    showPage("next");
+
+});
+
+/* 前へ */
+
+document.getElementById("prev").addEventListener("click", () => {
+
+    current--;
+
+    if(current < 0){
+        current = pages.length - 1;
+    }
+
+    showPage("prev");
+
+});
+
+/* フリック操作 */
+
+let touchStartX = 0;
+let touchEndX = 0;
+
+/* タッチ開始 */
+
+img.addEventListener("touchstart", (e) => {
+
+    touchStartX = e.changedTouches[0].screenX;
+
+}, { passive:true });
+
+/* タッチ終了 */
+
+img.addEventListener("touchend", (e) => {
+
+    touchEndX = e.changedTouches[0].screenX;
+
+    handleSwipe();
+
+}, { passive:true });
+
+/* スワイプ判定 */
+
+function handleSwipe(){
+
+    const swipeDistance = touchEndX - touchStartX;
+
+    /* 左フリック */
+
+    if(swipeDistance < -50){
+
+        current++;
+
+        if(current >= pages.length){
+            current = 0;
+        }
+
+        showPage("next");
+    }
+
+    /* 右フリック */
+
+    if(swipeDistance > 50){
+
+        current--;
+
+        if(current < 0){
+            current = pages.length - 1;
+        }
+
+        showPage("prev");
+    }
+}
+
+/* 初期表示 */
+
+showPage();
+
+</script>
+
+</body>
+</html>
